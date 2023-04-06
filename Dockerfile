@@ -2,9 +2,9 @@ FROM node:9.8-alpine as node
 ADD frontend/ .
 RUN npm install && npm run build
 
-FROM golang:1.10-alpine as golang
+FROM golang:1.20.3-alpine3.17 as golang
 RUN apk --no-cache add git
-WORKDIR /go/src/github.com/negz/kuberos/
+WORKDIR /go/src/github.com/wandera/kuberos/
 ENV CGO_ENABLED=0
 
 ADD . .
@@ -19,7 +19,6 @@ RUN cd statik && go generate && cd ..
 RUN go build -o /kuberos ./cmd/kuberos
 
 FROM alpine:3.7
-MAINTAINER Nic Cope <n+docker@rk0n.org>
 
 RUN apk --no-cache add ca-certificates
 COPY --from=golang /kuberos /
