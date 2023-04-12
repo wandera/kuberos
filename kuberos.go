@@ -17,7 +17,6 @@ import (
 	"github.com/spf13/afero"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
-	"k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
@@ -246,8 +245,8 @@ func (h *Handlers) KubeCfg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	code := r.FormValue(urlParamCode)
-	if code == "" {
+	codeEncoded := r.FormValue(urlParamCode)
+	if codeEncoded == "" {
 		http.Error(w, ErrMissingCode.Error(), http.StatusBadRequest)
 		return
 	}
@@ -260,7 +259,13 @@ func (h *Handlers) KubeCfg(w http.ResponseWriter, r *http.Request) {
 		RedirectURL:  redirectURL(r, h.endpoint),
 	}
 
-	rsp, err := h.e.Process(r.Context(), c, code)
+	codeDecoded, err := url.QueryUnescape(codeEncoded)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "cannot decode OAuth2 code").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rsp, err := h.e.Process(r.Context(), c, codeDecoded)
 	if err != nil {
 		http.Error(w, errors.Wrap(err, "cannot process OAuth2 code").Error(), http.StatusForbidden)
 		return
